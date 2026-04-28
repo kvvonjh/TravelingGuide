@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🇸🇬 싱가포르 여행</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700;800&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #F6F1E9;
+  --ink: #1A1510;
+  --muted: #7A7068;
+  --border: #DDD6CC;
+  --bg: #FDFAF5;
+  --hotel: #1D9E75; --food: #7F77DD; --cafe: #BA7517;
+  --sight: #378ADD; --shop: #D4537E; --bar: #26215C;
+  --must: #E24B4A;  --local: #4A8C3F; --kr: #B03030;
+  --radius: 16px;
+  --peek: 196px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; font-family: 'Pretendard', sans-serif; background: #d4cfc6; color: var(--ink); }
+
+/* ════════════════════════ DESKTOP ════════════════════════ */
+@media (min-width: 700px) {
+  body { display: flex; }
+  #map-area { flex: 1; position: relative; height: 100vh; }
+  #sheet {
+    width: 390px; min-width: 320px;
+    height: 100vh; border-radius: 0;
+    border-left: 1.5px solid var(--border);
+    position: relative; transform: none !important;
+    display: flex; flex-direction: column;
+    box-shadow: none; background: var(--bg);
+  }
+  #sheet-handle, #map-fab { display: none; }
+  #place-list { flex: 1; overflow-y: auto; }
+}
+
+/* ════════════════════════ MOBILE ════════════════════════ */
+@media (max-width: 699px) {
+  body { display: block; position: relative; }
+  #map-area { position: fixed; inset: 0; z-index: 0; }
+  #sheet {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: calc(100vh - 52px);
+    border-radius: var(--radius) var(--radius) 0 0;
+    z-index: 10;
+    transform: translateY(calc(100vh - 52px - var(--peek)));
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
+    will-change: transform;
+  }
+  #sheet.s-mid  { transform: translateY(calc((100vh - 52px) * 0.42)); }
+  #sheet.s-full { transform: translateY(0); }
+  #place-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  #map-fab {
+    position: fixed; z-index: 11;
+    right: 14px; bottom: calc(var(--peek) + 12px);
+    background: var(--ink); color: var(--cream);
+    border: none; border-radius: 28px;
+    padding: 9px 14px; font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; gap: 5px;
+    box-shadow: 0 3px 14px rgba(0,0,0,.25); cursor: pointer;
+    transition: bottom .3s cubic-bezier(.4,0,.2,1);
+  }
+}
+
+/* ── MAP AREA ── */
+#map-area { background: #ccc8bf; display: flex; align-items: center; justify-content: center; }
+#map-iframe { width: 100%; height: 100%; border: none; display: none; }
+#map-empty { text-align: center; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+#map-empty .icon { font-size: 52px; }
+#map-empty h2 { font-family: 'Nanum Myeongjo', serif; font-size: 19px; font-weight: 800; }
+#map-empty p { font-size: 12px; color: var(--muted); line-height: 1.75; max-width: 260px; }
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 18px; background: var(--ink); color: var(--cream);
+  border-radius: 24px; font-size: 13px; font-weight: 600;
+  text-decoration: none; border: none; cursor: pointer;
+}
+
+/* ── SHEET ── */
+#sheet {
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  box-shadow: 0 -4px 28px rgba(0,0,0,.13);
+  overflow: hidden;
+}
+#sheet-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--border); margin: 10px auto 0;
+  flex-shrink: 0; cursor: grab; touch-action: none;
+}
+#sheet-header { padding: 10px 16px 2px; flex-shrink: 0; }
+#sheet-header h1 { font-family: 'Nanum Myeongjo', serif; font-size: 15px; font-weight: 800; }
+#sheet-header p  { font-size: 10.5px; color: var(--muted); margin-top: 1px; }
+
+/* Day tabs */
+#day-tabs {
+  display: flex; overflow-x: auto; scrollbar-width: none;
+  padding: 8px 16px 0; gap: 6px; flex-shrink: 0;
+}
+#day-tabs::-webkit-scrollbar { display: none; }
+.day-tab {
+  flex-shrink: 0; padding: 5px 12px; border-radius: 20px;
+  font-size: 12px; font-weight: 500; color: var(--muted);
+  background: var(--cream); border: 1px solid var(--border);
+  cursor: pointer; white-space: nowrap;
+  display: flex; flex-direction: column; align-items: center; line-height: 1.3;
+  transition: all .15s;
+}
+.day-tab span { font-size: 9.5px; }
+.day-tab.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+.day-tab.active span { color: #A89E8C; }
+
+/* Route link */
+#route-row {
+  padding: 7px 16px 3px; flex-shrink: 0;
+}
+#route-link {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 500; color: var(--muted);
+  text-decoration: none; padding: 4px 10px 4px 8px;
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--cream);
+}
+.divider { height: 1px; background: var(--border); margin: 6px 0 0; flex-shrink: 0; }
+
+/* Place list */
+#place-list { padding: 2px 0 32px; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.day-section {
+  padding: 10px 16px 3px; font-size: 10px; font-weight: 700;
+  color: var(--muted); letter-spacing: .7px; text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px;
+}
+.day-section::after { content:''; flex:1; height:1px; background:var(--border); }
+.pi {
+  display: grid; grid-template-columns: 46px 9px 1fr;
+  gap: 0 10px; padding: 7px 16px;
+  cursor: pointer; transition: background .12s; align-items: start;
+}
+.pi:active, .pi.active { background: rgba(26,21,16,.06); }
+.pi-time {
+  font-size: 10px; color: var(--muted); text-align: right;
+  padding-top: 3px; font-variant-numeric: tabular-nums; font-weight: 500;
+}
+.pi-line { display:flex; flex-direction:column; align-items:center; padding-top:4px; }
+.pi-dot  { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.pi-conn { width:1.5px; flex:1; min-height:16px; background:var(--border); margin-top:3px; }
+.pi.last-day .pi-conn { display:none; }
+.pi-body { padding-bottom: 5px; }
+.pi-name { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.35; }
+.pi-desc { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.5; }
+.pi-tags { display:flex; flex-wrap:wrap; gap:3px; margin-top:5px; }
+.tag { font-size: 9.5px; padding: 1.5px 6px; border-radius: 20px; font-weight: 600; }
+.tag-hotel { background:#E1F5EE; color:#0F6E56; }
+.tag-food  { background:#EEEDFE; color:#3C3489; }
+.tag-cafe  { background:#FAEEDA; color:#633806; }
+.tag-sight { background:#E6F1FB; color:#0C447C; }
+.tag-shop  { background:#FBEAF0; color:#72243E; }
+.tag-bar   { background:#E8E6F4; color:#26215C; }
+.tag-must  { background:#F7C1C1; color:#501313; }
+.tag-local { background:#EAF3DE; color:#27500A; }
+.tag-kr    { background:#FCEBEC; color:#791F1F; }
+.pi-map {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10.5px; font-weight: 500; color: #1a73e8;
+  text-decoration: none; margin-top: 6px;
+  padding: 3px 9px 3px 7px;
+  background: #EAF2FF; border: 1px solid #cce0f5; border-radius: 14px;
+}
+
+/* ════ DETAIL MODAL ════ */
+#overlay {
+  display: none; position: fixed; inset: 0; z-index: 30;
+  background: rgba(0,0,0,.38); align-items: flex-end; justify-content: center;
+}
+#overlay.open { display: flex; }
+#detail {
+  background: var(--bg); width: 100%; max-width: 560px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 20px 20px 36px; position: relative;
+  animation: su .26s cubic-bezier(.4,0,.2,1);
+}
+@keyframes su { from{transform:translateY(50px);opacity:0} to{transform:translateY(0);opacity:1} }
+.d-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--cream); border: 1px solid var(--border);
+  font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; color: var(--muted);
+}
+#d-day  { font-size: 10px; color: var(--muted); margin-bottom: 3px; font-weight: 500; }
+#d-name { font-family: 'Nanum Myeongjo', serif; font-size: 19px; font-weight: 800; margin-bottom: 6px; line-height: 1.3; }
+#d-desc { font-size: 12.5px; color: var(--muted); line-height: 1.7; margin-bottom: 10px; }
+#d-tags { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:14px; }
+#d-map  {
+  width: 100%; height: 190px; border-radius: 10px;
+  overflow: hidden; border: 1px solid var(--border); margin-bottom: 12px; background: #ddd;
+}
+#d-map iframe { width:100%; height:100%; border:none; }
+.d-btns { display:flex; gap:8px; }
+.d-btn {
+  flex:1; padding: 11px; border-radius: 10px; border: none; cursor: pointer;
+  font-size: 13px; font-weight: 600; text-decoration: none;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: opacity .13s;
+}
+.d-btn:active { opacity: .8; }
+.d-btn.fill { background: var(--ink); color: var(--cream); }
+.d-btn.line { background: var(--cream); color: var(--ink); border: 1.5px solid var(--border); }
+
+@media (min-width: 700px) {
+  #overlay.open { align-items: center; }
+  #detail { border-radius: var(--radius); max-width: 440px; margin: 0 20px; }
+  #d-map  { height: 220px; }
+}
+</style>
+</head>
+<body>
+
+<!-- MAP -->
+<div id="map-area">
+  <iframe id="map-iframe"></iframe>
+  <div id="map-empty">
+    <div class="icon">🗺️</div>
+    <h2>싱가포르 여행 지도</h2>
+    <p>아래 목록에서 장소를 탭하면<br>지도가 열려요</p>
+    <button class="btn-primary" onclick="openRoute()">📍 오늘 경로 보기</button>
+  </div>
+</div>
+
+<!-- Mobile FAB -->
+<button id="map-fab" onclick="openRoute()">
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+  경로 보기
+</button>
+
+<!-- BOTTOM SHEET -->
+<div id="sheet">
+  <div id="sheet-handle"></div>
+  <div id="sheet-header">
+    <h1>🇸🇬 싱가포르 4박5일</h1>
+    <p>5/1(목) ~ 5/5(월) · Amara Hotel 베이스</p>
+  </div>
+  <div id="day-tabs">
+    <button class="day-tab active" onclick="showDay(1,this)">Day 1<span>5/1 목</span></button>
+    <button class="day-tab" onclick="showDay(2,this)">Day 2<span>5/2 금</span></button>
+    <button class="day-tab" onclick="showDay(3,this)">Day 3<span>5/3 토</span></button>
+    <button class="day-tab" onclick="showDay(4,this)">Day 4<span>5/4 일</span></button>
+    <button class="day-tab" onclick="showDay(5,this)">Day 5<span>5/5 월</span></button>
+    <button class="day-tab" onclick="showDay(0,this)">전체<span>ALL</span></button>
+  </div>
+  <div id="route-row">
+    <a id="route-link" href="#" target="_blank">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span id="route-label">Day 1 전체 경로 Google Maps</span>
+    </a>
+  </div>
+  <div class="divider"></div>
+  <div id="place-list"></div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div id="overlay" onclick="closeDetail(event)">
+  <div id="detail">
+    <button class="d-close" onclick="closeDetail()">✕</button>
+    <div id="d-day"></div>
+    <div id="d-name"></div>
+    <div id="d-desc"></div>
+    <div id="d-tags"></div>
+    <div id="d-map"><iframe id="d-iframe"></iframe></div>
+    <div class="d-btns">
+      <a id="d-gmaps" class="d-btn fill" href="#" target="_blank">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Google Maps에서 열기
+      </a>
+      <button class="d-btn line" onclick="closeDetail()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PLACES = [
+  {day:1,time:'21:30',name:'창이공항 → Amara Hotel',desc:'그랩 약 30분 / S$20~25 / 공항에서 SIM·EZ-Link 카드 구매 강력 추천',tags:['hotel'],dot:'#1D9E75',q:'Amara Hotel Singapore Tanjong Pagar'},
+  {day:1,time:'22:00',name:'Lau Pa Sat — 야식·사테이',desc:'밤 10시↑ 바깥 노점 꼬치구이 (치킨·비프·스팅레이) / S$15~25',tags:['food','kr'],dot:'#7F77DD',q:'Lau Pa Sat Singapore'},
+  {day:1,time:'23:30',name:'Amara Hotel 귀환',desc:'취침',tags:['hotel'],dot:'#1D9E75',q:'Amara Hotel Singapore'},
+
+  {day:2,time:'08:10',name:'Song Fa Bak Kut Teh ⭐',desc:'미쉐린 선정 바쿠텍 / New Bridge Rd / 11시 전에 가야 줄 짧음 / S$12~18',tags:['must','food','kr'],dot:'#E24B4A',q:'Song Fa Bak Kut Teh New Bridge Road Singapore'},
+  {day:2,time:'09:30',name:'Maxwell Food Centre',desc:'치킨라이스·락사·오탁 호커 탐방 / S$3~6',tags:['food','kr'],dot:'#7F77DD',q:'Maxwell Food Centre Singapore'},
+  {day:2,time:'11:00',name:'Merlion Park + 마리나베이',desc:'MRT 래플스플레이스 / 무료 인증샷',tags:['sight'],dot:'#378ADD',q:'Merlion Park Singapore'},
+  {day:2,time:'12:30',name:'TWG Tea on the Bay (MBS) ☕',desc:'800종 홍차·파티스리 / 황금 인테리어 / S$30~50',tags:['cafe','kr'],dot:'#BA7517',q:'TWG Tea Marina Bay Sands Singapore'},
+  {day:2,time:'14:00',name:'National Gallery Singapore',desc:'동남아 최대 시각예술 컬렉션 / S$20 / 루프탑 무료',tags:['sight'],dot:'#378ADD',q:'National Gallery Singapore'},
+  {day:2,time:'17:30',name:'Gardens by the Bay',desc:'클라우드 포레스트+수퍼트리 야경쇼 19:45·20:45 무료 / S$53',tags:['sight','kr'],dot:'#378ADD',q:'Gardens by the Bay Singapore'},
+  {day:2,time:'20:00',name:'JUMBO Seafood (Riverside Point) 🦀',desc:'칠리크랩+블랙페퍼크랩 / 사전 예약 필수 / S$60~90',tags:['food','kr'],dot:'#7F77DD',q:'JUMBO Seafood Riverside Point Singapore'},
+  {day:2,time:'21:30',name:'LeVeL33 루프탑바 🌃',desc:'33F 세계 최고층 도심 양조장 / 마리나베이 파노라마 야경 / S$25~40',tags:['bar','kr'],dot:'#26215C',q:'LeVeL33 Marina Bay Financial Centre Singapore'},
+
+  {day:3,time:'08:40',name:'Nylon Coffee Roasters ☕',desc:'스페셜티 커피 성지 / 에티오피아 싱글오리진 / 화요일 휴무',tags:['cafe','local'],dot:'#BA7517',q:'Nylon Coffee Roasters Everton Park Singapore'},
+  {day:3,time:'10:00',name:'Singapore Cable Car (Mount Faber)',desc:'유리바닥 곤돌라 → 센토사 입성 / S$35~',tags:['sight'],dot:'#378ADD',q:'Singapore Cable Car Mount Faber'},
+  {day:3,time:'11:30',name:'Singapore Oceanarium (Sentosa)',desc:'세계 최대 수족관 2025 리뉴얼 / S$44 / 클룩 할인',tags:['sight'],dot:'#378ADD',q:'Singapore Oceanarium Sentosa'},
+  {day:3,time:'14:00',name:'Palawan Beach',desc:'아시아 최남단 인증샷 / 무료 / 흔들다리 최남단 포인트',tags:['sight','food'],dot:'#7F77DD',q:'Palawan Beach Sentosa Singapore'},
+  {day:3,time:'15:30',name:'Birds of Paradise Gelato 🍦 (VivoCity)',desc:'타임 콘+Strawberry Basil 시그니처 / S$5.5~',tags:['cafe','local'],dot:'#BA7517',q:'Birds of Paradise Gelato VivoCity Singapore'},
+  {day:3,time:'19:00',name:'Ya Ge (야거) 딤섬 저녁 🟠',desc:'Orchid Hotel 3F / 드라이에이지 오리구이+딤섬 / 예약 추천 / S$40~60',tags:['food'],dot:'#BA7517',q:'Ya Ge Chinese Restaurant Orchid Hotel Singapore'},
+
+  {day:4,time:'08:40',name:'Chye Seng Huat Hardware ☕',desc:'옛 철물점 개조 대형 로스터리 카페 / 월요일 휴무 / S$8~15',tags:['cafe','local'],dot:'#BA7517',q:'Chye Seng Huat Hardware Coffee Singapore'},
+  {day:4,time:'10:00',name:'Mustafa Centre',desc:'24시간 기념품·쇼핑 / 초콜릿·화장품 최저가 / 리틀인디아',tags:['shop','kr'],dot:'#D4537E',q:'Mustafa Centre Little India Singapore'},
+  {day:4,time:'11:30',name:'Haji Lane + Kampong Glam',desc:'술탄 모스크 인근 / 벽화 인증샷 / 소품샵·빈티지샵',tags:['sight'],dot:'#378ADD',q:'Haji Lane Kampong Glam Singapore'},
+  {day:4,time:'12:30',name:'Sungei Road Laksa ⭐',desc:'숯불 원조 락사 / S$4 / 오후 4시 마감·수요일 휴무 주의!',tags:['must','food','local'],dot:'#E24B4A',q:'Sungei Road Laksa Jalan Berseh Singapore'},
+  {day:4,time:'14:30',name:'Creamier 🍦',desc:'수제 아이스크림+와플 / 얼그레이 라벤더 시그니처 / S$8~12',tags:['cafe','local'],dot:'#BA7517',q:'Creamier Handcrafted Ice Cream Singapore'},
+  {day:4,time:'16:00',name:'ArtScience Museum',desc:'teamLab Future World 빛 인터랙티브 / S$19 / MRT 베이프런트',tags:['sight'],dot:'#378ADD',q:'ArtScience Museum Marina Bay Sands Singapore'},
+  {day:4,time:'17:30',name:'PS.Cafe Harding Road ☕',desc:'가든 뷰 야외석·뎀프시힐 / 초콜릿 블랙아웃 케이크 / S$20~30',tags:['cafe','local'],dot:'#BA7517',q:'PS Cafe Harding Road Dempsey Hill Singapore'},
+  {day:4,time:'19:00',name:'Imperial Treasure Super Peking Duck 🟠',desc:'테이블사이드 슬라이싱 쇼 / 예약 필수 / S$50~80',tags:['food'],dot:'#FAC775',q:'Imperial Treasure Super Peking Duck Singapore'},
+  {day:4,time:'21:00',name:'Smoke & Mirrors 🌃',desc:'National Gallery 6F 루프탑 칵테일바 / MBS 정면 야경 / S$25~32',tags:['bar'],dot:'#26215C',q:'Smoke and Mirrors rooftop bar Singapore'},
+
+  {day:5,time:'09:10',name:'Maxwell Food Centre ⭐ 호커 올인',desc:'락사+차퀘이테오+오탁 총공략 / 도보 5분 / S$4~6',tags:['must','food','kr'],dot:'#E24B4A',q:'Maxwell Food Centre Tanjong Pagar Singapore'},
+  {day:5,time:'09:50',name:'butter tgt ☕',desc:'레몬 아인슈페너+따뜻한 마들렌 / 호텔 도보 5분 / 화요일 휴무',tags:['cafe'],dot:'#BA7517',q:'butter tgt cafe Singapore'},
+  {day:5,time:'10:30',name:'Chinatown + Ann Siang Hill',desc:'Bengawan Solo 판단케이크·기념품 / People\'s Park 환전',tags:['shop','sight'],dot:'#D4537E',q:'Chinatown Street Singapore'},
+  {day:5,time:'12:00',name:'The Coconut Club',desc:'나시르막+렌당+첸돌 / River Valley New Bahru / S$25~40',tags:['food','local'],dot:'#7F77DD',q:'The Coconut Club River Valley Road Singapore'},
+  {day:5,time:'14:00',name:'ION Orchard + ION Sky 55층',desc:'55층 무료 전망대 / Level 4 안내데스크 접수',tags:['shop','sight'],dot:'#D4537E',q:'ION Orchard Singapore'},
+  {day:5,time:'15:30',name:'Bacha Coffee ION Orchard ☕',desc:'모로코 1920년대 감성 / 싱글오리진 드립+커피젤리 / S$20~35',tags:['cafe'],dot:'#BA7517',q:'Bacha Coffee ION Orchard Singapore'},
+  {day:5,time:'18:00',name:'Jewel Changi — Rain Vortex',desc:'세계 최대 실내 폭포 / 레이저쇼 S$14 / 면세 쇼핑',tags:['sight','shop'],dot:'#378ADD',q:'Jewel Changi Airport Singapore'},
+  {day:5,time:'19:00',name:'Birds of Paradise Gelato 🍦 (Jewel)',desc:'타임 콘 필수 / 마지막 젤라또 / S$5.5~',tags:['cafe','local'],dot:'#BA7517',q:'Birds of Paradise Gelato Jewel Changi Airport'},
+  {day:5,time:'22:00',name:'✈️ 인천행 출발',desc:'안전한 귀환! 수고하셨습니다 🎉',tags:['hotel'],dot:'#1D9E75',q:'Changi Airport Singapore'},
+];
+
+const TL = {hotel:'호텔',food:'식사',cafe:'카페',sight:'관광',shop:'쇼핑',bar:'야경바',must:'필수',local:'현지',kr:'한국인검증'};
+const DN = ['','5/1 목','5/2 금','5/3 토','5/4 일','5/5 월'];
+let curDay = 1;
+
+function gp(d) { return d===0 ? PLACES : PLACES.filter(p=>p.day===d); }
+
+function renderList(d) {
+  const list = document.getElementById('place-list');
+  const ps = gp(d);
+  let h = '', ld = null;
+  ps.forEach((p,i) => {
+    if (d===0 && p.day!==ld) { ld=p.day; h+=`<div class="day-section">Day ${p.day} · ${DN[p.day]}</div>`; }
+    const tags = p.tags.map(t=>`<span class="tag tag-${t}">${TL[t]||t}</span>`).join('');
+    const mu = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.q)}`;
+    const isLast = (i===ps.length-1)||(d===0&&ps[i+1]&&ps[i+1].day!==p.day);
+    h+=`<div class="pi${isLast?' last-day':''}" id="pi${i}" onclick="openDetail(${i})">
+      <span class="pi-time">${p.time}</span>
+      <div class="pi-line"><div class="pi-dot" style="background:${p.dot}"></div><div class="pi-conn"></div></div>
+      <div class="pi-body">
+        <div class="pi-name">${p.name}</div>
+        <div class="pi-desc">${p.desc}</div>
+        <div class="pi-tags">${tags}</div>
+        <a class="pi-map" href="${mu}" target="_blank" onclick="event.stopPropagation()">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>지도 보기
+        </a>
+      </div>
+    </div>`;
+  });
+  list.innerHTML = h;
+}
+
+function setRouteLink(d) {
+  const ps = gp(d);
+  const url = `https://www.google.com/maps/dir/${ps.map(p=>encodeURIComponent(p.q)).join('/')}`;
+  document.getElementById('route-link').href = url;
+  document.getElementById('route-label').textContent = d===0 ? '전체 주요 장소 경로 보기' : `Day ${d} 전체 경로 Google Maps`;
+}
+
+function showDay(d, btn) {
+  curDay = d;
+  document.querySelectorAll('.day-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderList(d); setRouteLink(d);
+  // mobile: bump to mid
+  const s = document.getElementById('sheet');
+  if (window.innerWidth < 700) { s.classList.remove('s-full'); s.classList.add('s-mid'); moveFab('mid'); }
+  resetMap();
+}
+
+function resetMap() {
+  document.getElementById('map-iframe').style.display='none';
+  document.getElementById('map-empty').style.display='flex';
+}
+
+function openDetail(i) {
+  const ps = gp(curDay);
+  const p = ps[i];
+  if (!p) return;
+  const mu = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.q)}`;
+  const eu = `https://maps.google.com/maps?q=${encodeURIComponent(p.q)}&output=embed&z=16`;
+  document.getElementById('d-day').textContent  = `Day ${p.day} · ${p.time} · ${DN[p.day]}`;
+  document.getElementById('d-name').textContent = p.name;
+  document.getElementById('d-desc').textContent = p.desc;
+  document.getElementById('d-tags').innerHTML   = p.tags.map(t=>`<span class="tag tag-${t}">${TL[t]||t}</span>`).join('');
+  document.getElementById('d-gmaps').href       = mu;
+  document.getElementById('d-iframe').src       = eu;
+  document.getElementById('overlay').classList.add('open');
+  // update bg map (desktop)
+  const fr = document.getElementById('map-iframe');
+  fr.src=eu; fr.style.display='block';
+  document.getElementById('map-empty').style.display='none';
+  document.querySelectorAll('.pi').forEach(el=>el.classList.remove('active'));
+  const el=document.getElementById(`pi${i}`); if(el) el.classList.add('active');
+}
+
+function closeDetail(e) {
+  if (e && e.target!==document.getElementById('overlay')) return;
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function openRoute() {
+  const ps = gp(curDay);
+  window.open(`https://www.google.com/maps/dir/${ps.map(p=>encodeURIComponent(p.q)).join('/')}`,'_blank');
+}
+
+// ── BOTTOM SHEET DRAG ──
+(function(){
+  const sheet = document.getElementById('sheet');
+  const handle = document.getElementById('sheet-handle');
+  if (!handle || window.innerWidth >= 700) return;
+
+  let sy=0, st=0, drag=false;
+  function getTY() { return new DOMMatrix(window.getComputedStyle(sheet).transform).m42; }
+  function snap(s) {
+    sheet.style.transition = '';
+    sheet.classList.remove('s-mid','s-full');
+    if (s==='full') sheet.classList.add('s-full');
+    else if (s==='mid') sheet.classList.add('s-mid');
+    moveFab(s);
+  }
+
+  handle.addEventListener('touchstart', e=>{drag=true;sy=e.touches[0].clientY;st=getTY();sheet.style.transition='none';},{passive:true});
+  window.addEventListener('touchmove', e=>{
+    if(!drag) return;
+    let ny = st+(e.touches[0].clientY-sy);
+    ny = Math.max(0, Math.min(ny, window.innerHeight*0.82));
+    sheet.style.transform=`translateY(${ny}px)`;
+  },{passive:true});
+  window.addEventListener('touchend', ()=>{
+    if(!drag) return; drag=false;
+    const cur=getTY(), h=window.innerHeight;
+    sheet.style.transform='';
+    if (cur < h*0.2)       snap('full');
+    else if (cur < h*0.62) snap('mid');
+    else                    snap('peek');
+  });
+
+  snap('peek');
+})();
+
+function moveFab(state) {
+  const fab = document.getElementById('map-fab');
+  if (!fab) return;
+  if (state==='peek')    fab.style.bottom='calc(var(--peek) + 12px)';
+  else if(state==='mid') fab.style.bottom='calc(55vh + 6px)';
+  else                   fab.style.bottom='calc(100vh - 20px)';
+}
+
+renderList(1); setRouteLink(1);
+</script>
+</body>
+</html>
