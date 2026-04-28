@@ -43,16 +43,25 @@ html, body { height: 100%; overflow: hidden; font-family: 'Pretendard', sans-ser
   #map-area { position: fixed; inset: 0; z-index: 0; }
   #sheet {
     position: fixed; bottom: 0; left: 0; right: 0;
-    height: calc(100vh - 52px);
+    /* 시트 최대 높이: 화면 전체 */
+    height: 100vh;
     border-radius: var(--radius) var(--radius) 0 0;
     z-index: 10;
-    transform: translateY(calc(100vh - 52px - var(--peek)));
+    /* 기본(peek): 상단 196px만 보이게 */
+    transform: translateY(calc(100vh - var(--peek)));
     transition: transform .3s cubic-bezier(.4,0,.2,1);
     will-change: transform;
   }
-  #sheet.s-mid  { transform: translateY(calc((100vh - 52px) * 0.42)); }
+  #sheet.s-mid  { transform: translateY(45vh); }
   #sheet.s-full { transform: translateY(0); }
-  #place-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  /* place-list: 시트 내 남은 공간을 모두 쓰되 넘치면 스크롤 */
+  #place-list {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /* 시트가 full일 때도 목록이 하단까지 보이도록 여유 패딩 */
+    padding-bottom: env(safe-area-inset-bottom, 24px);
+  }
   #map-fab {
     position: fixed; z-index: 11;
     right: 14px; bottom: calc(var(--peek) + 12px);
@@ -63,6 +72,8 @@ html, body { height: 100%; overflow: hidden; font-family: 'Pretendard', sans-ser
     box-shadow: 0 3px 14px rgba(0,0,0,.25); cursor: pointer;
     transition: bottom .3s cubic-bezier(.4,0,.2,1);
   }
+  /* 드래그 가능 영역을 핸들+헤더+탭까지 확장 */
+  #drag-zone { touch-action: none; cursor: grab; }
 }
 
 /* ── MAP AREA ── */
@@ -238,18 +249,20 @@ html, body { height: 100%; overflow: hidden; font-family: 'Pretendard', sans-ser
 
 <!-- BOTTOM SHEET -->
 <div id="sheet">
-  <div id="sheet-handle"></div>
-  <div id="sheet-header">
-    <h1>🇸🇬 싱가포르 4박5일</h1>
-    <p>5/1(목) ~ 5/5(월) · Amara Hotel 베이스</p>
-  </div>
-  <div id="day-tabs">
-    <button class="day-tab active" onclick="showDay(1,this)">Day 1<span>5/1 목</span></button>
-    <button class="day-tab" onclick="showDay(2,this)">Day 2<span>5/2 금</span></button>
-    <button class="day-tab" onclick="showDay(3,this)">Day 3<span>5/3 토</span></button>
-    <button class="day-tab" onclick="showDay(4,this)">Day 4<span>5/4 일</span></button>
-    <button class="day-tab" onclick="showDay(5,this)">Day 5<span>5/5 월</span></button>
-    <button class="day-tab" onclick="showDay(0,this)">전체<span>ALL</span></button>
+  <div id="drag-zone">
+    <div id="sheet-handle"></div>
+    <div id="sheet-header">
+      <h1>🇸🇬 싱가포르 4박5일</h1>
+      <p>5/1(목) ~ 5/5(월) · Amara Hotel 베이스</p>
+    </div>
+    <div id="day-tabs">
+      <button class="day-tab active" onclick="showDay(1,this)">Day 1<span>5/1 목</span></button>
+      <button class="day-tab" onclick="showDay(2,this)">Day 2<span>5/2 금</span></button>
+      <button class="day-tab" onclick="showDay(3,this)">Day 3<span>5/3 토</span></button>
+      <button class="day-tab" onclick="showDay(4,this)">Day 4<span>5/4 일</span></button>
+      <button class="day-tab" onclick="showDay(5,this)">Day 5<span>5/5 월</span></button>
+      <button class="day-tab" onclick="showDay(0,this)">전체<span>ALL</span></button>
+    </div>
   </div>
   <div id="route-row">
     <a id="route-link" href="#" target="_blank">
@@ -410,34 +423,67 @@ function openRoute() {
 
 // ── BOTTOM SHEET DRAG ──
 (function(){
-  const sheet = document.getElementById('sheet');
-  const handle = document.getElementById('sheet-handle');
-  if (!handle || window.innerWidth >= 700) return;
+  if (window.innerWidth >= 700) return;
+  const sheet   = document.getElementById('sheet');
+  const dzone   = document.getElementById('drag-zone');
+  const list    = document.getElementById('place-list');
 
   let sy=0, st=0, drag=false;
-  function getTY() { return new DOMMatrix(window.getComputedStyle(sheet).transform).m42; }
-  function snap(s) {
-    sheet.style.transition = '';
-    sheet.classList.remove('s-mid','s-full');
-    if (s==='full') sheet.classList.add('s-full');
-    else if (s==='mid') sheet.classList.add('s-mid');
-    moveFab(s);
+  const VH = () => window.innerHeight;
+
+  // 현재 translateY 값 읽기
+  function getTY() {
+    const m = new DOMMatrix(window.getComputedStyle(sheet).transform);
+    return m.m42;
   }
 
-  handle.addEventListener('touchstart', e=>{drag=true;sy=e.touches[0].clientY;st=getTY();sheet.style.transition='none';},{passive:true});
-  window.addEventListener('touchmove', e=>{
-    if(!drag) return;
-    let ny = st+(e.touches[0].clientY-sy);
-    ny = Math.max(0, Math.min(ny, window.innerHeight*0.82));
-    sheet.style.transform=`translateY(${ny}px)`;
-  },{passive:true});
-  window.addEventListener('touchend', ()=>{
-    if(!drag) return; drag=false;
-    const cur=getTY(), h=window.innerHeight;
-    sheet.style.transform='';
-    if (cur < h*0.2)       snap('full');
-    else if (cur < h*0.62) snap('mid');
-    else                    snap('peek');
+  // 스냅 위치로 이동
+  function snap(s) {
+    sheet.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1)';
+    sheet.style.transform  = '';          // CSS class가 담당
+    sheet.classList.remove('s-mid','s-full');
+    if      (s === 'full') sheet.classList.add('s-full');
+    else if (s === 'mid')  sheet.classList.add('s-mid');
+    // else: peek (transform은 CSS default)
+    moveFab(s);
+    // 스크롤 잠금: peek/mid 상태에서 list 스크롤 막아 드래그 우선
+    list.style.overflowY = (s === 'full') ? 'auto' : 'hidden';
+  }
+
+  // 드래그 시작: drag-zone 전체에서 받음
+  dzone.addEventListener('touchstart', e => {
+    drag = true;
+    sy   = e.touches[0].clientY;
+    st   = getTY();
+    sheet.style.transition = 'none';
+  }, { passive: true });
+
+  // full 상태에서 list 최상단이면 위로 끌어당겨 닫을 수 있게
+  list.addEventListener('touchstart', e => {
+    if (list.scrollTop === 0) {
+      drag = true;
+      sy   = e.touches[0].clientY;
+      st   = getTY();
+      sheet.style.transition = 'none';
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchmove', e => {
+    if (!drag) return;
+    const dy = e.touches[0].clientY - sy;
+    let ny = st + dy;
+    ny = Math.max(0, Math.min(ny, VH() * 0.88));  // 최대 88% 아래로만
+    sheet.style.transform = `translateY(${ny}px)`;
+  }, { passive: true });
+
+  window.addEventListener('touchend', () => {
+    if (!drag) return;
+    drag = false;
+    const cur = getTY();
+    const h   = VH();
+    if      (cur < h * 0.18)  snap('full');
+    else if (cur < h * 0.60)  snap('mid');
+    else                       snap('peek');
   });
 
   snap('peek');
@@ -446,9 +492,9 @@ function openRoute() {
 function moveFab(state) {
   const fab = document.getElementById('map-fab');
   if (!fab) return;
-  if (state==='peek')    fab.style.bottom='calc(var(--peek) + 12px)';
-  else if(state==='mid') fab.style.bottom='calc(55vh + 6px)';
-  else                   fab.style.bottom='calc(100vh - 20px)';
+  if      (state === 'peek') fab.style.bottom = 'calc(var(--peek) + 12px)';
+  else if (state === 'mid')  fab.style.bottom = '58vh';
+  else                       fab.style.bottom = 'calc(100vh + 8px)'; // full일 땐 숨김
 }
 
 renderList(1); setRouteLink(1);
