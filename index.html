@@ -220,6 +220,42 @@ html, body { height: 100%; overflow: hidden; font-family: 'Pretendard', sans-ser
 .d-btn:active { opacity: .8; }
 .d-btn.fill { background: var(--ink); color: var(--cream); }
 .d-btn.line { background: var(--cream); color: var(--ink); border: 1.5px solid var(--border); }
+/* ── ALTS (플랜 B/C/D 토글) ── */
+.alts-toggle {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 8px; padding: 4px 10px 4px 8px;
+  background: #F0EDE6; border: 1px solid var(--border);
+  border-radius: 12px; font-size: 11px; font-weight: 600;
+  color: var(--muted); cursor: pointer; transition: background .13s;
+  user-select: none;
+}
+.alts-toggle:hover { background: #E6E1D8; }
+.alts-toggle .arrow { font-size: 9px; transition: transform .2s; display: inline-block; }
+.alts-toggle.open .arrow { transform: rotate(180deg); }
+.alts-body {
+  display: none; margin-top: 6px;
+  border-left: 2px solid var(--border);
+  padding-left: 10px;
+}
+.alts-body.open { display: block; }
+.alt-row { display: flex; gap: 6px; align-items: flex-start; margin-bottom: 6px; padding-right: 2px; }
+.alt-row:last-child { margin-bottom: 0; }
+.alt-label {
+  flex-shrink: 0; font-size: 9.5px; font-weight: 700;
+  padding: 2px 6px; border-radius: 4px; margin-top: 1px;
+  background: #E8E3DC; color: var(--muted);
+}
+.alt-text { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.alt-map-btn {
+  flex-shrink: 0;
+  font-size: 14px;
+  text-decoration: none;
+  opacity: .75;
+  margin-top: 1px;
+  padding: 0 2px;
+  transition: opacity .13s;
+}
+.alt-map-btn:hover { opacity: 1; }
 
 @media (min-width: 700px) {
   #overlay.open { align-items: center; }
@@ -282,6 +318,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Pretendard', sans-ser
     <div id="d-name"></div>
     <div id="d-desc"></div>
     <div id="d-tags"></div>
+    <div id="d-alts" style="margin-bottom:12px"></div>
     <div id="d-map"><iframe id="d-iframe"></iframe></div>
     <div class="d-btns">
       <a id="d-gmaps" class="d-btn fill" href="#" target="_blank">
@@ -295,47 +332,154 @@ html, body { height: 100%; overflow: hidden; font-family: 'Pretendard', sans-ser
 
 <script>
 const PLACES = [
-  {day:1,time:'21:30',name:'창이공항 → Amara Hotel',desc:'그랩 약 30분 / S$20~25 / 공항에서 SIM·EZ-Link 카드 구매 강력 추천',tags:['hotel'],dot:'#1D9E75',q:'Amara Hotel Singapore Tanjong Pagar'},
-  {day:1,time:'22:00',name:'Lau Pa Sat — 야식·사테이',desc:'밤 10시↑ 바깥 노점 꼬치구이 (치킨·비프·스팅레이) / S$15~25',tags:['food','kr'],dot:'#7F77DD',q:'Lau Pa Sat Singapore'},
-  {day:1,time:'23:30',name:'Amara Hotel 귀환',desc:'취침',tags:['hotel'],dot:'#1D9E75',q:'Amara Hotel Singapore'},
-
-  {day:2,time:'08:10',name:'Song Fa Bak Kut Teh ⭐',desc:'미쉐린 선정 바쿠텍 / New Bridge Rd / 11시 전에 가야 줄 짧음 / S$12~18',tags:['must','food','kr'],dot:'#E24B4A',q:'Song Fa Bak Kut Teh New Bridge Road Singapore'},
-  {day:2,time:'09:30',name:'Maxwell Food Centre',desc:'치킨라이스·락사·오탁 호커 탐방 / S$3~6',tags:['food','kr'],dot:'#7F77DD',q:'Maxwell Food Centre Singapore'},
-  {day:2,time:'11:00',name:'Merlion Park + 마리나베이',desc:'MRT 래플스플레이스 / 무료 인증샷',tags:['sight'],dot:'#378ADD',q:'Merlion Park Singapore'},
-  {day:2,time:'12:30',name:'TWG Tea on the Bay (MBS) ☕',desc:'800종 홍차·파티스리 / 황금 인테리어 / S$30~50',tags:['cafe','kr'],dot:'#BA7517',q:'TWG Tea Marina Bay Sands Singapore'},
-  {day:2,time:'14:00',name:'National Gallery Singapore',desc:'동남아 최대 시각예술 컬렉션 / S$20 / 루프탑 무료',tags:['sight'],dot:'#378ADD',q:'National Gallery Singapore'},
-  {day:2,time:'17:30',name:'Gardens by the Bay',desc:'클라우드 포레스트+수퍼트리 야경쇼 19:45·20:45 무료 / S$53',tags:['sight','kr'],dot:'#378ADD',q:'Gardens by the Bay Singapore'},
-  {day:2,time:'20:00',name:'JUMBO Seafood (Riverside Point) 🦀',desc:'칠리크랩+블랙페퍼크랩 / 사전 예약 필수 / S$60~90',tags:['food','kr'],dot:'#7F77DD',q:'JUMBO Seafood Riverside Point Singapore'},
-  {day:2,time:'21:30',name:'LeVeL33 루프탑바 🌃',desc:'33F 세계 최고층 도심 양조장 / 마리나베이 파노라마 야경 / S$25~40',tags:['bar','kr'],dot:'#26215C',q:'LeVeL33 Marina Bay Financial Centre Singapore'},
-
-  {day:3,time:'08:40',name:'Nylon Coffee Roasters ☕',desc:'스페셜티 커피 성지 / 에티오피아 싱글오리진 / 화요일 휴무',tags:['cafe','local'],dot:'#BA7517',q:'Nylon Coffee Roasters Everton Park Singapore'},
-  {day:3,time:'10:00',name:'Singapore Cable Car (Mount Faber)',desc:'유리바닥 곤돌라 → 센토사 입성 / S$35~',tags:['sight'],dot:'#378ADD',q:'Singapore Cable Car Mount Faber'},
-  {day:3,time:'11:30',name:'Singapore Oceanarium (Sentosa)',desc:'세계 최대 수족관 2025 리뉴얼 / S$44 / 클룩 할인',tags:['sight'],dot:'#378ADD',q:'Singapore Oceanarium Sentosa'},
-  {day:3,time:'14:00',name:'Palawan Beach',desc:'아시아 최남단 인증샷 / 무료 / 흔들다리 최남단 포인트',tags:['sight','food'],dot:'#7F77DD',q:'Palawan Beach Sentosa Singapore'},
-  {day:3,time:'15:30',name:'Birds of Paradise Gelato 🍦 (VivoCity)',desc:'타임 콘+Strawberry Basil 시그니처 / S$5.5~',tags:['cafe','local'],dot:'#BA7517',q:'Birds of Paradise Gelato VivoCity Singapore'},
-  {day:3,time:'19:00',name:'Ya Ge (야거) 딤섬 저녁 🟠',desc:'Orchid Hotel 3F / 드라이에이지 오리구이+딤섬 / 예약 추천 / S$40~60',tags:['food'],dot:'#BA7517',q:'Ya Ge Chinese Restaurant Orchid Hotel Singapore'},
-
-  {day:4,time:'08:40',name:'Chye Seng Huat Hardware ☕',desc:'옛 철물점 개조 대형 로스터리 카페 / 월요일 휴무 / S$8~15',tags:['cafe','local'],dot:'#BA7517',q:'Chye Seng Huat Hardware Coffee Singapore'},
-  {day:4,time:'10:00',name:'Mustafa Centre',desc:'24시간 기념품·쇼핑 / 초콜릿·화장품 최저가 / 리틀인디아',tags:['shop','kr'],dot:'#D4537E',q:'Mustafa Centre Little India Singapore'},
-  {day:4,time:'11:30',name:'Haji Lane + Kampong Glam',desc:'술탄 모스크 인근 / 벽화 인증샷 / 소품샵·빈티지샵',tags:['sight'],dot:'#378ADD',q:'Haji Lane Kampong Glam Singapore'},
-  {day:4,time:'12:30',name:'Sungei Road Laksa ⭐',desc:'숯불 원조 락사 / S$4 / 오후 4시 마감·수요일 휴무 주의!',tags:['must','food','local'],dot:'#E24B4A',q:'Sungei Road Laksa Jalan Berseh Singapore'},
-  {day:4,time:'14:30',name:'Creamier 🍦',desc:'수제 아이스크림+와플 / 얼그레이 라벤더 시그니처 / S$8~12',tags:['cafe','local'],dot:'#BA7517',q:'Creamier Handcrafted Ice Cream Singapore'},
-  {day:4,time:'16:00',name:'ArtScience Museum',desc:'teamLab Future World 빛 인터랙티브 / S$19 / MRT 베이프런트',tags:['sight'],dot:'#378ADD',q:'ArtScience Museum Marina Bay Sands Singapore'},
-  {day:4,time:'17:30',name:'PS.Cafe Harding Road ☕',desc:'가든 뷰 야외석·뎀프시힐 / 초콜릿 블랙아웃 케이크 / S$20~30',tags:['cafe','local'],dot:'#BA7517',q:'PS Cafe Harding Road Dempsey Hill Singapore'},
-  {day:4,time:'19:00',name:'Imperial Treasure Super Peking Duck 🟠',desc:'테이블사이드 슬라이싱 쇼 / 예약 필수 / S$50~80',tags:['food'],dot:'#FAC775',q:'Imperial Treasure Super Peking Duck Singapore'},
-  {day:4,time:'21:00',name:'Smoke & Mirrors 🌃',desc:'National Gallery 6F 루프탑 칵테일바 / MBS 정면 야경 / S$25~32',tags:['bar'],dot:'#26215C',q:'Smoke and Mirrors rooftop bar Singapore'},
-
-  {day:5,time:'09:10',name:'Maxwell Food Centre ⭐ 호커 올인',desc:'락사+차퀘이테오+오탁 총공략 / 도보 5분 / S$4~6',tags:['must','food','kr'],dot:'#E24B4A',q:'Maxwell Food Centre Tanjong Pagar Singapore'},
-  {day:5,time:'09:50',name:'butter tgt ☕',desc:'레몬 아인슈페너+따뜻한 마들렌 / 호텔 도보 5분 / 화요일 휴무',tags:['cafe'],dot:'#BA7517',q:'butter tgt cafe Singapore'},
-  {day:5,time:'10:30',name:'Chinatown + Ann Siang Hill',desc:'Bengawan Solo 판단케이크·기념품 / People\'s Park 환전',tags:['shop','sight'],dot:'#D4537E',q:'Chinatown Street Singapore'},
-  {day:5,time:'12:00',name:'The Coconut Club',desc:'나시르막+렌당+첸돌 / River Valley New Bahru / S$25~40',tags:['food','local'],dot:'#7F77DD',q:'The Coconut Club River Valley Road Singapore'},
-  {day:5,time:'14:00',name:'ION Orchard + ION Sky 55층',desc:'55층 무료 전망대 / Level 4 안내데스크 접수',tags:['shop','sight'],dot:'#D4537E',q:'ION Orchard Singapore'},
-  {day:5,time:'15:30',name:'Bacha Coffee ION Orchard ☕',desc:'모로코 1920년대 감성 / 싱글오리진 드립+커피젤리 / S$20~35',tags:['cafe'],dot:'#BA7517',q:'Bacha Coffee ION Orchard Singapore'},
-  {day:5,time:'18:00',name:'Jewel Changi — Rain Vortex',desc:'세계 최대 실내 폭포 / 레이저쇼 S$14 / 면세 쇼핑',tags:['sight','shop'],dot:'#378ADD',q:'Jewel Changi Airport Singapore'},
-  {day:5,time:'19:00',name:'Birds of Paradise Gelato 🍦 (Jewel)',desc:'타임 콘 필수 / 마지막 젤라또 / S$5.5~',tags:['cafe','local'],dot:'#BA7517',q:'Birds of Paradise Gelato Jewel Changi Airport'},
-  {day:5,time:'22:00',name:'✈️ 인천행 출발',desc:'안전한 귀환! 수고하셨습니다 🎉',tags:['hotel'],dot:'#1D9E75',q:'Changi Airport Singapore'},
-];
-
+  // DAY 1
+  {day:1,time:'21:30',name:'창이공항 → Amara Hotel',desc:'그랩 약 30분 / S$20~25 / 공항에서 SIM·EZ-Link 카드 구매 강력 추천',tags:['hotel'],dot:'#1D9E75',q:'Amara Hotel Singapore Tanjong Pagar',alts:[]},
+  {day:1,time:'22:00',name:'Lau Pa Sat — 야식·사테이',desc:'밤 10시↑ 바깥 노점 꼬치구이 (치킨·비프·스팅레이) / S$15~25',tags:['food','kr'],dot:'#7F77DD',q:'Lau Pa Sat Singapore',alts:[
+    {label:'플랜B',text:'Duxton Hill 야외 바 — 도보 5분, 맥주 한 잔 후 바로 취침, 첫날 체력 비축'},
+    {label:'플랜C',text:'Maxwell Food Centre 야간 — 도보 5분, 카야토스트+테 타릭으로 간단하게'},
+    {label:'피로시',text:'편의점 야식 후 바로 취침 — 비행 피로 심할 땐 내일을 위한 체력 비축이 최선'},
+  ]},
+  {day:1,time:'23:30',name:'Amara Hotel 귀환',desc:'취침',tags:['hotel'],dot:'#1D9E75',q:'Amara Hotel Singapore',alts:[]},
+  // DAY 2
+  {day:2,time:'08:10',name:'Song Fa Bak Kut Teh ⭐',desc:'미쉐린 선정 바쿠텍 / New Bridge Rd / 11시 전에 가야 줄 짧음 / S$12~18',tags:['must','food','kr'],dot:'#E24B4A',q:'Song Fa Bak Kut Teh New Bridge Road Singapore',alts:[
+    {label:'플랜B',text:'Founder Bak Kut Teh — MRT 발레스티어, 40년 전통·유명인사 단골, 후추 강도 Song Fa보다 강함 S$12~20'},
+    {label:'플랜C',text:'Morning BKT @ Hong Lim 호커 — 도보 10분, 숯불 원조 헤르벌 스타일(색깔 다름), S$7~10'},
+    {label:'플랜D',text:'Hvala Kissa Coffee House — 도보 1분! 100AM몰, 말차 전문 카페, 디케프 어파가토+더티 말차 타르트'},
+  ]},
+  {day:2,time:'09:30',name:'Maxwell Food Centre',desc:'치킨라이스·락사·오탁 호커 탐방 / S$3~6',tags:['food','kr'],dot:'#7F77DD',q:'Maxwell Food Centre Singapore',alts:[
+    {label:'스킵 가능',text:'바쿠텍으로 배부르면 스킵 → 마리나베이로 바로 이동, Maxwell은 Day 5에 총공략'},
+  ]},
+  {day:2,time:'11:00',name:'Merlion Park + 마리나베이',desc:'MRT 래플스플레이스 / 무료 인증샷',tags:['sight'],dot:'#378ADD',q:'Merlion Park Singapore',alts:[
+    {label:'함께',text:'Fullerton Hotel 로비 무료 구경 — 100년 클래식 건물, 웅장한 석조 인테리어 인증샷'},
+    {label:'커피 추가',text:'percolate (Nankin Row) — 도보 10분, 얼 그레이 레몬 로프케이크+굴라 멜라카 아파가토, 로컬 스페셜티'},
+  ]},
+  {day:2,time:'12:30',name:'TWG Tea on the Bay (MBS) ☕',desc:'800종 홍차·파티스리 / 황금 인테리어 / S$30~50',tags:['cafe','kr'],dot:'#BA7517',q:'TWG Tea Marina Bay Sands Singapore',alts:[
+    {label:'플랜B',text:'Bacha Coffee ION — 모로코 1920년대 감성, 100종↑ 싱글오리진 커피+마카롱 샴페인 세트 S$25~40'},
+    {label:'플랜C',text:'Arteastiq Mandarin Gallery — 해산물 하이티 세트, 드라이아이스 연출 비주얼 최고 S$35~55'},
+    {label:'가볍게',text:'Tim Ho Wan PEAK (MBS 지하) — 딤섬 점심으로 대체, 미쉐린 BBQ바오+하가우 S$20~30'},
+  ]},
+  {day:2,time:'14:00',name:'National Gallery Singapore',desc:'동남아 최대 시각예술 컬렉션 / S$20 / 루프탑 무료',tags:['sight'],dot:'#378ADD',q:'National Gallery Singapore',alts:[
+    {label:'플랜B',text:'ArtScience Museum — teamLab Future World, 빛 인터랙티브 몰입형 S$19, 더 감성적'},
+    {label:'플랜C',text:'National Museum of Singapore — 역사+미디어아트 혼합 전시 S$15, 에어컨 빵빵'},
+    {label:'스킵',text:'지쳐있으면 스킵 → MBS 쇼핑몰 에어컨 구경 후 JUMBO까지 편하게 대기'},
+  ]},
+  {day:2,time:'17:30',name:'Gardens by the Bay',desc:'클라우드 포레스트+수퍼트리 야경쇼 19:45·20:45 무료 / S$53',tags:['sight','kr'],dot:'#378ADD',q:'Gardens by the Bay Singapore',alts:[
+    {label:'가볍게',text:'야외 수퍼트리 산책+야경쇼만 — 무료, 돔 입장 스킵하고 체력 아끼기'},
+    {label:'스킵',text:'지쳐있으면 스킵 → JUMBO 예약 30분 전 클락키 강변 산책으로 대체'},
+  ]},
+  {day:2,time:'20:00',name:'JUMBO Seafood (Riverside Point) 🦀',desc:'칠리크랩+블랙페퍼크랩 / 사전 예약 필수 / S$60~90',tags:['food','kr'],dot:'#7F77DD',q:'JUMBO Seafood Riverside Point Singapore',alts:[
+    {label:'플랜B씨푸드',text:'Long Beach @ Dempsey — 블랙페퍼크랩 원조, 가든 야외석, 예약 필수'},
+    {label:'플랜C가볍게',text:'Song Fa BKT 저녁 — 아침에 못 갔을 때 저녁으로 보완, 클락키 도보 5분 S$15~20'},
+    {label:'플랜D로컬',text:'Sin Hoi Sai Seafood — 현지인 단골 씨푸드, 새벽 3시까지, 가성비 최고'},
+  ]},
+  {day:2,time:'21:30',name:'LeVeL33 루프탑바 🌃',desc:'33F 세계 최고층 도심 양조장 / 마리나베이 파노라마 야경 / S$25~40',tags:['bar','kr'],dot:'#26215C',q:'LeVeL33 Marina Bay Financial Centre Singapore',alts:[
+    {label:'플랜B바',text:'Smoke & Mirrors — 내셔널갤러리 6F, MBS 정면 야경, 시그니처 칵테일·트러플 프라이 S$25~32'},
+    {label:'플랜C바',text:'1-Altitude — 1 Raffles Place 62F, 360도 야외 전망, 싱가포르 가장 높은 루프탑바 S$35(2잔)'},
+    {label:'피로시',text:'Clarke Quay 강변 야외 바 — 맥주 한 캔 들고 강변 벤치, 야경만 감상 후 그랩 귀환'},
+  ]},
+  // DAY 3
+  {day:3,time:'08:40',name:'Nylon Coffee Roasters ☕',desc:'스페셜티 커피 성지 / 에티오피아 싱글오리진 / 화요일 휴무',tags:['cafe','local'],dot:'#BA7517',q:'Nylon Coffee Roasters Everton Park Singapore',alts:[
+    {label:'플랜B',text:"Toby's Estate (Robertson Quay) — 강변 야외석, 스모크 샐먼 로스티+매콤한 렘페 볶음 브런치 S$18~28"},
+    {label:'플랜C',text:'Kith Café Robertson Quay — 강변 야외 브런치, 초콜릿 바나나 브레드+아보카도 토스트 S$15~25'},
+    {label:'플랜D',text:'Tiong Bahru Bakery — 도보 15분, 아몬드 크루아상+카푸치노, 쿠앙아만(캐러멜 버터 케이크) 시그니처'},
+  ]},
+  {day:3,time:'10:00',name:'Singapore Cable Car (Mount Faber)',desc:'유리바닥 곤돌라 → 센토사 입성 / S$35~',tags:['sight'],dot:'#378ADD',q:'Singapore Cable Car Mount Faber',alts:[
+    {label:'플랜B',text:'Sentosa Express 모노레일 — S$4, 케이블카 줄 길면 대체, 하버프런트역 탑승'},
+  ]},
+  {day:3,time:'11:30',name:'Singapore Oceanarium (Sentosa)',desc:'세계 최대 수족관 2025 리뉴얼 / S$44 / 클룩 할인',tags:['sight'],dot:'#378ADD',q:'Singapore Oceanarium Sentosa',alts:[
+    {label:'플랜B',text:'River Wonders — 판다 카이카이·지아지아+리버 크루즈, 부모님 대만족 S$42, 만다이 위치'},
+    {label:'플랜C',text:'Fort Siloso 역사 요새 S$8 + Imbiah Lookout 무료 전망대 — 체력 덜 씀, 역사 관심 있을 때'},
+  ]},
+  {day:3,time:'14:00',name:'Palawan Beach',desc:'아시아 최남단 인증샷 / 무료 / 흔들다리 최남단 포인트',tags:['sight','food'],dot:'#7F77DD',q:'Palawan Beach Sentosa Singapore',alts:[
+    {label:'업그레이드',text:'Coastes Beach Bar — 팔라완 바로 앞, 바다 뷰 파스타·버거·선셋 칵테일 S$25~35'},
+    {label:'플랜C',text:'Tanjong Beach Club — 주말 리조트 비치클럽, 낮술+피자, 입장료 없이 오더 가능 (주말 이른 입장 권장)'},
+  ]},
+  {day:3,time:'15:30',name:'Birds of Paradise Gelato 🍦 (VivoCity)',desc:'타임 콘+Strawberry Basil 시그니처 / S$5.5~',tags:['cafe','local'],dot:'#BA7517',q:'Birds of Paradise Gelato VivoCity Singapore',alts:[
+    {label:'플랜B',text:'Creamier — 얼그레이 라벤더·Root Beer 아이스크림+와플, 따뜻한 와플 콤보가 시그니처 S$8~12'},
+    {label:'플랜C',text:'Bengawan Solo 비보시티점 — 판단 쉬폰케이크 한 조각 맛보기+선물용 구매 동시에'},
+    {label:'플랜D',text:'Sunday Folks Holland Village — 소프트 아이스크림+와플+홈메이드 쿠키, 인스타 감성 그랩 20분'},
+  ]},
+  {day:3,time:'19:00',name:'Ya Ge (야거) 딤섬 저녁 🟠',desc:'Orchid Hotel 3F / 드라이에이지 오리구이+이베리코 차슈+딤섬 / 예약 추천 / S$40~60',tags:['food'],dot:'#BA7517',q:'Ya Ge Chinese Restaurant Orchid Hotel Singapore',alts:[
+    {label:'플랜B',text:'Imperial Treasure Super Peking Duck (Asia Square) — 도보 10분, 북경오리 테이블사이드 슬라이싱 쇼 S$60~80'},
+    {label:'플랜C',text:'Peach Garden @ The Heeren — 미쉐린 비브 광망, 드라이아이스 리치볼+XO 무 케이크 S$40~60'},
+    {label:'가볍게',text:'1939 Singapore — 도보 5분, 클럽스트리트 감성 수제버거+루프탑 바+코코넛 네그로니 S$30~45'},
+  ]},
+  // DAY 4
+  {day:4,time:'08:40',name:'Chye Seng Huat Hardware ☕',desc:'옛 철물점 개조 대형 로스터리 카페 / 월요일 휴무 / S$8~15',tags:['cafe','local'],dot:'#BA7517',q:'Chye Seng Huat Hardware Coffee Singapore',alts:[
+    {label:'플랜B',text:'Ya Kun Kaya Toast Far East Square — 도보 8분, 1944년 창업 원조 카야토스트+반숙달걀+코피 S$6~8'},
+    {label:'플랜C',text:'Killiney Kopitiam — 도보 5분, 1919년 창업 원조 코피티암, 버터+카야 토스트, 진짜 현지인 아침'},
+    {label:'플랜D',text:'Penny University (Jln Klapa) — 하지레인 근처, 터키식 달걀+스크램블드에그 브런치, 밝은 숍하우스 S$18~28'},
+  ]},
+  {day:4,time:'10:00',name:'Mustafa Centre',desc:'24시간 기념품·쇼핑 / 초콜릿·화장품 최저가 / 리틀인디아',tags:['shop','kr'],dot:'#D4537E',q:'Mustafa Centre Little India Singapore',alts:[
+    {label:'함께',text:'Tekka Centre 도보 5분 — 로컬 웻마켓+호커, 로티 프라타·비리야니·무르타박 현지 아침 분위기'},
+    {label:'쇼핑 확장',text:'ION Orchard — MRT 이동, 55층 ION Sky 전망대 무료, Bacha Coffee ION점도 함께 방문 가능'},
+  ]},
+  {day:4,time:'11:30',name:'Haji Lane + Kampong Glam',desc:'술탄 모스크 인근 / 벽화 인증샷 / 소품샵·빈티지샵',tags:['sight'],dot:'#378ADD',q:'Haji Lane Kampong Glam Singapore',alts:[
+    {label:'카페 추가',text:'Penny University (Jln Klapa, 도보 5분) — 밝은 숍하우스, 플랫화이트+터키식 달걀, 아침 이어서 가능'},
+    {label:'스낵',text:'하지레인 내 Windowsill Pies — 홈베이크 파이 한 조각+레모네이드, 골목 감성'},
+  ]},
+  {day:4,time:'12:30',name:'Sungei Road Laksa ⭐',desc:'숯불 원조 락사 / S$4 / 오후 4시 마감·수요일 휴무 주의!',tags:['must','food','local'],dot:'#E24B4A',q:'Sungei Road Laksa Jalan Berseh Singapore',alts:[
+    {label:'플랜B',text:'328 Katong Laksa — 미쉐린 비브 광망, 스푼만으로 먹는 카통 스타일, 가장 진한 코코넛 국물 S$7~8'},
+    {label:'플랜C',text:'Maxwell Food Centre 락사 스톨 — 호텔 도보 5분, 이동 최소화하고 싶을 때 S$4~6'},
+    {label:'플랜D',text:'ATLAS Bar — 하지레인 도보 10분, 아르데코 황금 인테리어, 로브스터롤+진 칵테일로 특별한 점심 S$40~60'},
+  ]},
+  {day:4,time:'14:30',name:'Creamier 🍦',desc:'수제 아이스크림+와플 / 얼그레이 라벤더 시그니처 / S$8~12',tags:['cafe','local'],dot:'#BA7517',q:'Creamier Handcrafted Ice Cream Singapore',alts:[
+    {label:'플랜B',text:'Birds of Paradise VivoCity or Katong점 — 센토사 때 못 갔다면 오늘 방문'},
+    {label:'플랜C',text:'Hvala Kissa Coffee House — 호텔 옆 100AM몰, 말차 전문, 더티 말차 타르트+어파가토 S$10~18'},
+  ]},
+  {day:4,time:'16:00',name:'ArtScience Museum',desc:'teamLab Future World 빛 인터랙티브 / S$19 / MRT 베이프런트',tags:['sight'],dot:'#378ADD',q:'ArtScience Museum Marina Bay Sands Singapore',alts:[
+    {label:'플랜B',text:'MBS SkyPark 전망대 — 56층 S$32, 일몰 세션(17시~) 예약 시 일몰+야경 동시 가능'},
+    {label:'스킵',text:'피곤하면 스킵 → 그랩 바로 뎀프시힐, PS.Cafe 가든 뷰 야외석에서 편하게 쉬기'},
+  ]},
+  {day:4,time:'17:30',name:'PS.Cafe Harding Road ☕',desc:'가든 뷰 야외석·뎀프시힐 / 초콜릿 블랙아웃 케이크 / S$20~30',tags:['cafe','local'],dot:'#BA7517',q:'PS Cafe Harding Road Dempsey Hill Singapore',alts:[
+    {label:'플랜B',text:"Toby's Estate Robertson Quay — 강변 야외석+스모크 샐먼 로스티, Nylon 못 갔을 때 보완 가능 S$15~28"},
+    {label:'플랜C',text:'The Daily Scoop Holland Village — 와플+아이스크림, 가족 친화적, 그랩 이동'},
+  ]},
+  {day:4,time:'19:00',name:'Imperial Treasure Super Peking Duck 🟠',desc:'테이블사이드 슬라이싱 쇼 / 예약 필수 / S$50~80',tags:['food'],dot:'#FAC775',q:'Imperial Treasure Super Peking Duck Singapore',alts:[
+    {label:'플랜B',text:'Summer Palace (Conrad Orchard) — 미쉐린 1스타 광동, 드렁큰 새우+스팀 구루퍼+딤섬 S$60~90'},
+    {label:'플랜C',text:'Peach Garden @ The Heeren — 미쉐린 비브 광망, XO 무 케이크+드라이아이스 리치볼 연출 S$40~60'},
+    {label:'씨푸드로',text:'Long Beach @ Dempsey — PS.Cafe 바로 옆, 블랙페퍼크랩 원조·가든 야외석, 예약 필수 S$60~90'},
+  ]},
+  {day:4,time:'21:00',name:'Smoke & Mirrors 🌃',desc:'National Gallery 6F 루프탑 칵테일바 / MBS 정면 야경 / S$25~32',tags:['bar'],dot:'#26215C',q:'Smoke and Mirrors rooftop bar Singapore',alts:[
+    {label:'플랜B바',text:'CÉ LA VI SkyBar — MBS 57F 인피니티풀 옆, 싱가포르 슬링+클럽 분위기 S$38(1잔)'},
+    {label:'플랜C바',text:'LUMO Bar South Bridge Rd — 클락키 근처, 홋카이도 스캘럽+크리에이티브 칵테일, 캐주얼 S$20~28'},
+    {label:'피로시',text:'Clarke Quay 강변 — 야외 좌석 펍에서 타이거 맥주 한 잔, 야경만 즐기고 귀환'},
+  ]},
+  // DAY 5
+  {day:5,time:'09:10',name:'Maxwell Food Centre ⭐ 호커 올인',desc:'락사+차퀘이테오+오탁 총공략 / 도보 5분 / S$4~6',tags:['must','food','kr'],dot:'#E24B4A',q:'Maxwell Food Centre Tanjong Pagar Singapore',alts:[
+    {label:'플랜B',text:'Common Man Coffee Stanley St — 도보 8분, 옥스치크 에그베네딕트+콜럼비아 싱글오리진 S$20~28'},
+    {label:'플랜C',text:'butter tgt 재방문 — 도보 5분, 마들렌+살티드 캐러멜 쿠키 테이크아웃, 비행기 간식으로'},
+    {label:'플랜D',text:'Hvala Kissa — 도보 1분, 말차 라테+디케프 어파가토, 최후의 말차 한 잔으로 마무리'},
+  ]},
+  {day:5,time:'09:50',name:'butter tgt ☕',desc:'레몬 아인슈페너+따뜻한 마들렌 / 호텔 도보 5분 / 화요일 휴무',tags:['cafe'],dot:'#BA7517',q:'butter tgt cafe Singapore',alts:[]},
+  {day:5,time:'10:30',name:'Chinatown + Ann Siang Hill',desc:"Bengawan Solo 판단케이크·기념품 / People's Park 환전",tags:['shop','sight'],dot:'#D4537E',q:'Chinatown Street Singapore',alts:[
+    {label:'함께',text:'Ann Siang Hill Park — 언덕 위 무료 공원, 구시가 뷰 인증샷 명소'},
+    {label:'쇼핑 추가',text:"People's Park Complex — 한국인 즐겨 찾는 보석·환전·기념품, 분위기 구경도 재미"},
+  ]},
+  {day:5,time:'12:00',name:'The Coconut Club',desc:'나시르막+렌당+첸돌 / River Valley New Bahru / S$25~40',tags:['food','local'],dot:'#7F77DD',q:'The Coconut Club River Valley Road Singapore',alts:[
+    {label:'플랜B',text:'Lau Pa Sat 런치 — 첫날 야식 장소, 낮 버전은 전혀 다른 분위기, 현지 직장인 에너지 넘침'},
+    {label:'플랜C',text:'Yhingthai Palace (Purvis St) — 미쉐린 타이 요리, 닭날개 스터핑+뗌냠꿍+망고 스티키라이스 S$30~45'},
+    {label:'플랜D',text:'National Kitchen by Violet Oon — 내셔널갤러리 뇨냐 런치 코스, 마지막 특별 식사 S$40~60'},
+  ]},
+  {day:5,time:'14:00',name:'ION Orchard + ION Sky 55층',desc:'55층 무료 전망대 / Level 4 안내데스크 접수',tags:['shop','sight'],dot:'#D4537E',q:'ION Orchard Singapore',alts:[
+    {label:'플랜B',text:'313@Somerset — ION 바로 옆, 자라·H&M·유니클로 중저가, 부모님 편안한 쇼핑'},
+    {label:'스킵',text:'쇼핑 피로시 → Bacha Coffee ION점에서 싱글오리진 커피+마카롱 세트로 여유롭게 쉬기'},
+  ]},
+  {day:5,time:'15:30',name:'Bacha Coffee ION Orchard ☕',desc:'모로코 1920년대 감성 / 싱글오리진 드립+커피젤리 / S$20~35',tags:['cafe'],dot:'#BA7517',q:'Bacha Coffee ION Orchard Singapore',alts:[
+    {label:'플랜B',text:'TWG Tea ION점 — 홍차 선물 구매+마지막 티타임, 선물용 티백 포장 가능 S$15~30'},
+    {label:'플랜C',text:'Arteastiq Mandarin Gallery — 아이스 라이치 티+마들렌 쿠키+라이브 아트 분위기 S$15~25'},
+    {label:'플랜D',text:'PPP Coffee Funan — 스페셜티 오마카세 마지막 체험, 리스닝 바 감성 S$15~20'},
+  ]},
+  {day:5,time:'18:00',name:'Jewel Changi — Rain Vortex',desc:'세계 최대 실내 폭포 / 레이저쇼 S$14 / 면세 쇼핑',tags:['sight','shop'],dot:'#378ADD',q:'Jewel Changi Airport Singapore',alts:[
+    {label:'저녁 업그레이드',text:'Arteastiq Jewel 5층 — 오이스터+소어도우+칵테일, 분위기 있는 마지막 식사 S$40~60'},
+    {label:'가볍게',text:'Shake Shack Jewel — 부담 없이 버거로 마무리, 줄 짧은 시간대 노리기 S$15~20'},
+    {label:'딤섬 마무리',text:'Tim Ho Wan Jewel점 확인 — 딤섬 아직 미련 있다면 주얼 지점으로'},
+  ]},
+  {day:5,time:'19:00',name:'Birds of Paradise Gelato 🍦 (Jewel)',desc:'타임 콘 필수 / 마지막 젤라또 / S$5.5~',tags:['cafe','local'],dot:'#BA7517',q:'Birds of Paradise Gelato Jewel Changi Airport',alts:[
+    {label:'플랜B',text:'Bengawan Solo Jewel점 — 판단케이크+쿠에 테이크아웃, 비행기 안 간식으로 포장'},
+  ]},
+  {day:5,time:'22:00',name:'✈️ 인천행 출발',desc:'안전한 귀환! 수고하셨습니다 🎉',tags:['hotel'],dot:'#1D9E75',q:'Changi Airport Singapore',alts:[]},
+]
 const TL = {hotel:'호텔',food:'식사',cafe:'카페',sight:'관광',shop:'쇼핑',bar:'야경바',must:'필수',local:'현지',kr:'한국인검증'};
 const DN = ['','5/1 목','5/2 금','5/3 토','5/4 일','5/5 월'];
 let curDay = 1;
@@ -400,6 +544,29 @@ function openDetail(i) {
   document.getElementById('d-name').textContent = p.name;
   document.getElementById('d-desc').textContent = p.desc;
   document.getElementById('d-tags').innerHTML   = p.tags.map(t=>`<span class="tag tag-${t}">${TL[t]||t}</span>`).join('');
+  // alts
+  const dalts = document.getElementById('d-alts');
+  if (p.alts && p.alts.length) {
+    const uid = 'alt_' + Date.now();
+    const rows = p.alts.map(a=>{
+      // 텍스트 앞부분(첫 번째 ' —' 또는 전체)을 장소명으로 추출해서 검색어로 사용
+      const placeName = a.text.split(' —')[0].split(' (')[0].trim();
+      const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(placeName + ' Singapore')}`;
+      return `
+      <div class="alt-row">
+        <span class="alt-label">${a.label}</span>
+        <span class="alt-text">${a.text}</span>
+        <a class="alt-map-btn" href="${mapUrl}" target="_blank" onclick="event.stopPropagation()">📍</a>
+      </div>`;
+    }).join('');
+    dalts.innerHTML = `
+      <button class="alts-toggle" onclick="toggleAlts('${uid}',this)">
+        대안 보기 (${p.alts.length}개) <span class="arrow">▼</span>
+      </button>
+      <div class="alts-body" id="${uid}">${rows}</div>`;
+  } else {
+    dalts.innerHTML = '';
+  }
   document.getElementById('d-gmaps').href       = mu;
   document.getElementById('d-iframe').src       = eu;
   document.getElementById('overlay').classList.add('open');
@@ -409,6 +576,12 @@ function openDetail(i) {
   document.getElementById('map-empty').style.display='none';
   document.querySelectorAll('.pi').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById(`pi${i}`); if(el) el.classList.add('active');
+}
+
+function toggleAlts(uid, btn) {
+  const body = document.getElementById(uid);
+  const open = body.classList.toggle('open');
+  btn.classList.toggle('open', open);
 }
 
 function closeDetail(e) {
